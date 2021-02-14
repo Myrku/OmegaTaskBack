@@ -7,8 +7,10 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using mail_back.Models;
+using mail_back.Repository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -19,14 +21,22 @@ namespace mail_back.Controllers
     public class AuthController : ControllerBase
     {
         private IOptions<AuthOptions> authOptions;
-        public AuthController(IOptions<AuthOptions> authoptions)
+        UserRepository db;
+        public AuthController(IOptions<AuthOptions> authoptions, IConfiguration configuration)
         {
             authOptions = authoptions;
+            string connectionString = configuration.GetConnectionString("sqlite");
+            db = new UserRepository(connectionString);
         }
-        List<User> users = new List<User>()
+
+        [HttpPost]
+        [Route("sign-up")]
+        public IActionResult Register([FromBody] User user)
         {
-            new User() {id = 1, username = "test22", email="test@maul.ru", password="qwerty1234", role="admin"}
-        };
+            db.InsertUser(user);
+            return Ok();
+        }
+
 
         [HttpPost]
         [Route("sign-in")]
@@ -47,7 +57,7 @@ namespace mail_back.Controllers
 
         private User AuthUser(string username, string password)
         {
-            return users.SingleOrDefault(u => u.username == username && u.password == password);
+            return db.GetUsers().SingleOrDefault(u => u.username == username && u.password == GetHashPassword(password));
         }
         private string GenerateJWTToken(User user)
         {
