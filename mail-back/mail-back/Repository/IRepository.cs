@@ -10,8 +10,8 @@ namespace mail_back.Repository
     {
         Task<IEnumerable<T>> Get();
         Task<T> Get(int id);
-        Task<int> Insert(SQLiteCommand command);
-        Task<int> Update(T entity);
-        Task<int> Delete(T entity);
+        Task Add(SQLiteCommand command);
+        Task Update(SQLiteCommand command);
+        Task Delete(SQLiteCommand command);
     }
 }

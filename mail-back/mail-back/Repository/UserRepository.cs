@@ -7,32 +7,31 @@ using System.Data.SQLite;
 
 namespace mail_back.Repository
 {
-    public class UserRepository : Repository<User>
+    public class UserRepository
     {
-        public UserRepository(string connectionString) : base(connectionString, "Users")
+        Repository<User> repository;
+        public UserRepository(string connectionString)
         {
+            repository = new Repository<User>(connectionString, "Users");
         }
 
         public List<User> GetUsers()
         {
-            return this.Get().Result.ToList();
+            return repository.Get().Result.ToList();
         }
 
         public User GetUserById(int id)
         {
-            return this.Get(id).Result;
+            return repository.Get(id).Result;
         }
 
-        public int InsertUser(User user)
+        public async void InsertUser(User user)
         {
-            SQLiteCommand command = new SQLiteCommand("Insert into Users Values(@id, @username, @email, @password, @idrole)");
-            command.Parameters.AddWithValue("@id", user.id);
+            SQLiteCommand command = new SQLiteCommand("Insert into Users(username, email, password) Values(@username, @email, @password)");
             command.Parameters.AddWithValue("@username", user.username);
             command.Parameters.AddWithValue("@email", user.email);
-            command.Parameters.AddWithValue("@password", GetHashPassword(user.password));
-            command.Parameters.AddWithValue("@idrole", user.idrole);
-
-            return this.Insert(command).Result;
+            command.Parameters.AddWithValue("@password", repository.GetHashPassword(user.password));
+            await repository.Add(command);
         }
     }
 }

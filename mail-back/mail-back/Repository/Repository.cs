@@ -18,10 +18,19 @@ namespace mail_back.Repository
             this.db = new SQLiteConnection(connectionString);
             TableName = tableName;
         }
-        public Task<int> Delete(T entity)
+        public async Task Delete(SQLiteCommand command)
         {
-            throw new NotImplementedException();
-
+            try
+            {
+                await db.OpenAsync();
+                command.Connection = db;
+                int i = await command.ExecuteNonQueryAsync();
+                await db.CloseAsync();
+            }
+            finally
+            {
+                await db.CloseAsync();
+            }
         }
 
         public async Task<IEnumerable<T>> Get()
@@ -80,7 +89,7 @@ namespace mail_back.Repository
             }
         }
 
-        public async Task<int> Insert(SQLiteCommand command)
+        public async Task Add(SQLiteCommand command)
         {
             try
             {
@@ -88,7 +97,10 @@ namespace mail_back.Repository
                 command.Connection = db;
                 int i = await command.ExecuteNonQueryAsync();
                 await db.CloseAsync();
-                return i;
+            }
+            catch (Exception ex)
+            {
+
             }
             finally
             {
@@ -96,9 +108,19 @@ namespace mail_back.Repository
             }
         }
 
-        public Task<int> Update(T entity)
+        public async Task Update(SQLiteCommand command)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await db.OpenAsync();
+                command.Connection = db;
+                int i = await command.ExecuteNonQueryAsync();
+                await db.CloseAsync();
+            }
+            finally
+            {
+                await db.CloseAsync();
+            }
         }
 
         protected T Map<entity>(IDataRecord record)

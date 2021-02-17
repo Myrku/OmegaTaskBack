@@ -48,7 +48,8 @@ namespace mail_back.Controllers
                 var token = GenerateJWTToken(user);
                 return Ok(new
                 {
-                    access_token = token
+                    access_token = token,
+                    role = user.idrole
                 });
             }
 
