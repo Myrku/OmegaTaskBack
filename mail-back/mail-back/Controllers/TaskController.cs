@@ -9,6 +9,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using mail_back.Mail;
+using mail_back.Converter;
+using mail_back.Models;
+using mail_back.Jobs;
 
 namespace mail_back.Controllers
 {
@@ -19,18 +23,27 @@ namespace mail_back.Controllers
     {
         TaskRepository db;
         ApiRepository apidb;
-        public TaskController(IConfiguration configuration)
+        public TaskController(IConfiguration configuration, IServiceProvider service)
         {
             string connectionString = configuration.GetConnectionString("sqlite");
             db = new TaskRepository(connectionString);
             apidb = new ApiRepository(connectionString);
+            //JobScheduler.Start(service);
             //CovidApi covidApi = new CovidApi();
-            //covidApi.GetData(string.Empty);
-            //covidApi.GetData("BY");
+            //var c = covidApi.GetData(string.Empty).Result;
+            //var c = covidApi.GetData("BY").Result;
 
-            ForexPairApi stockApi = new ForexPairApi();
-            stockApi.GetData("USD/BYN");
+            //CSVConverter converter = new CSVConverter();
+            //converter.Convert<Covid>(c, "covid.csv");
 
+            //ForexPairApi stockApi = new ForexPairApi();
+            //stockApi.GetData("USD/BYN");
+
+            //QuoteApi quoteApi = new QuoteApi();
+            //quoteApi.GetData();
+
+            //MailSender mailSender = new MailSender(configuration);
+            //mailSender.Send("covid.csv", "DenisV_1@mail.ru");
         }
 
         [HttpGet]

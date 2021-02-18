@@ -8,32 +8,25 @@ using System.Threading.Tasks;
 
 namespace mail_back.Api
 {
-    public class CovidApi : ICovid
+    public class QuoteApi : IQuote
     {
-        public async Task<List<Covid>> GetData(string param)
+        public async Task<List<Quote>> GetData()
         {
-            List<Covid> covids = new List<Covid>();
+            List<Quote> quote = new List<Quote>();
             var client = new HttpClient();
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri($"https://covid19-api.org/api/status/{param}")
+                RequestUri = new Uri($"https://www.breakingbadapi.com/api/quote/random")
             };
 
             using (var response = await client.SendAsync(request))
             {
                 response.EnsureSuccessStatusCode();
                 var body = await response.Content.ReadAsStringAsync();
-                if (string.IsNullOrEmpty(param))
-                {
-                    covids = JsonConvert.DeserializeObject<List<Covid>>(body);
-                }
-                else
-                {
-                    covids.Add(JsonConvert.DeserializeObject<Covid>(body));
-                }
+                quote = JsonConvert.DeserializeObject<List<Quote>>(body);
             }
-            return covids;
+            return quote;
         }
     }
 }

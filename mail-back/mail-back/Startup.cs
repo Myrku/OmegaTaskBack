@@ -2,6 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using mail_back.Api;
+using mail_back.Converter;
+using mail_back.Jobs;
+using mail_back.Mail;
 using mail_back.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -29,6 +33,14 @@ namespace mail_back
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddTransient<JobFactory>();
+            services.AddScoped<CovidJob>();
+            services.AddScoped<IMailSender, MailSender>();
+            services.AddScoped<ICSVConvert, CSVConverter>();
+            services.AddScoped<ICovid, CovidApi>();
+            services.AddScoped<IForex, ForexPairApi>();
+            services.AddScoped<IQuote, QuoteApi>();
+
             var authoptions = Configuration.GetSection("Auth").Get<AuthOptions>();
             services.Configure<AuthOptions>(Configuration.GetSection("Auth"));
 

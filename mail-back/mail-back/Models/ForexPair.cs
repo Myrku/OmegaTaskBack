@@ -7,6 +7,7 @@ namespace mail_back.Models
 {
     public class ForexPair
     {
+        public string symbol { get; set; }
         public string price { get; set; }
         public DateTime dateTime = DateTime.Now;
     }

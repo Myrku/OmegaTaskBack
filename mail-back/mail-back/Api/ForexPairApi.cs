@@ -8,26 +8,28 @@ using System.Threading.Tasks;
 
 namespace mail_back.Api
 {
-    public class ForexPairApi
+    public class ForexPairApi : IForex
     {
-        const string APIKEY = "ee01f8ddf45c4e05a64ebfce5566779e";
-        public async void GetData(string symbolStock)
+        
+        public async Task<List<ForexPair>> GetData(string symbolStock)
         {
-            ForexPair stock;
+            List<ForexPair> stock = new List<ForexPair>();
             var client = new HttpClient();
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri($"https://api.twelvedata.com/price?symbol={symbolStock}&apikey={APIKEY}")
+                RequestUri = new Uri($"https://api.twelvedata.com/price?symbol={symbolStock}&apikey={IForex.APIKEY}")
             };
 
             using (var response = await client.SendAsync(request))
             {
                 response.EnsureSuccessStatusCode();
                 var body = await response.Content.ReadAsStringAsync();
-                stock = JsonConvert.DeserializeObject<ForexPair>(body);
-                
+                var s = JsonConvert.DeserializeObject<ForexPair>(body);
+                s.symbol = symbolStock;
+                stock.Add(s);
             }
+            return stock;
         }
     }
 }
