@@ -23,27 +23,13 @@ namespace mail_back.Controllers
     {
         TaskRepository db;
         ApiRepository apidb;
+        UserRepository userdb;
         public TaskController(IConfiguration configuration, IServiceProvider service)
         {
             string connectionString = configuration.GetConnectionString("sqlite");
             db = new TaskRepository(connectionString);
             apidb = new ApiRepository(connectionString);
-            //JobScheduler.Start(service);
-            //CovidApi covidApi = new CovidApi();
-            //var c = covidApi.GetData(string.Empty).Result;
-            //var c = covidApi.GetData("BY").Result;
-
-            //CSVConverter converter = new CSVConverter();
-            //converter.Convert<Covid>(c, "covid.csv");
-
-            //ForexPairApi stockApi = new ForexPairApi();
-            //stockApi.GetData("USD/BYN");
-
-            //QuoteApi quoteApi = new QuoteApi();
-            //quoteApi.GetData();
-
-            //MailSender mailSender = new MailSender(configuration);
-            //mailSender.Send("covid.csv", "DenisV_1@mail.ru");
+            userdb = new UserRepository(connectionString);
         }
 
         [HttpGet]
@@ -62,7 +48,9 @@ namespace mail_back.Controllers
         {
             if (task != null)
             {
-                db.AddTask(task, User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+                var user = userdb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
+                db.AddTask(task, user.id.ToString());
+                JobScheduler.AddTaskTriggerForJob(task, user);
                 return Ok();
             }
             else

@@ -16,5 +16,6 @@ namespace mail_back.Models
         public int apiid { get; set; }
         public string apiparam { get; set; }
         public string laststart { get; set; }
+        public int count { get; set; }
     }
 }

@@ -107,7 +107,6 @@ namespace mail_back.Repository
                 await db.CloseAsync();
             }
         }
-
         public async Task Update(SQLiteCommand command)
         {
             try

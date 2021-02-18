@@ -35,6 +35,8 @@ namespace mail_back
             services.AddControllers();
             services.AddTransient<JobFactory>();
             services.AddScoped<CovidJob>();
+            services.AddScoped<ForexJob>();
+            services.AddScoped<QuoteJob>();
             services.AddScoped<IMailSender, MailSender>();
             services.AddScoped<ICSVConvert, CSVConverter>();
             services.AddScoped<ICovid, CovidApi>();

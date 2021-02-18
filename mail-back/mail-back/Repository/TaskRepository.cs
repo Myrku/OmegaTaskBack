@@ -47,5 +47,12 @@ namespace mail_back.Repository
             command.Parameters.AddWithValue("@id", id);
             await repository.Delete(command);
         }
+        public async void UpdateLastTime(int idTask)
+        {
+            SQLiteCommand command = new SQLiteCommand($"UPDATE {TableName} SET laststart = @last, count = count + 1 where id = @id");
+            command.Parameters.AddWithValue("@id", idTask);
+            command.Parameters.AddWithValue("@last", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            await repository.Update(command);
+        }
     }
 }

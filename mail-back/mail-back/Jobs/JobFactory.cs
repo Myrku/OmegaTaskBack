@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 using Quartz.Spi;
 using System;
@@ -11,7 +12,6 @@ namespace mail_back.Jobs
     public class JobFactory : IJobFactory
     {
         protected readonly IServiceScopeFactory serviceScopeFactory;
-
 
         public JobFactory(IServiceScopeFactory serviceScopeFactory)
         {
