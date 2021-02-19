@@ -29,7 +29,7 @@ namespace mail_back.Repository
         public async void AddTask(Models.Task task, string userId)
         {
             SQLiteCommand command = new SQLiteCommand($"Insert into {TableName}(userid, taskname, description, starttime, period, apiid, apiparam, laststart) " +
-                $"Values(@userid, @taskname, @description, @starttime, @period, @apiid, @apiparam, @laststart)");
+                $"Values(@userid, @taskname, @description, @starttime, @period, @apiid, @apiparam, @laststart);");
             command.Parameters.AddWithValue("@userid", Convert.ToInt32(userId));
             command.Parameters.AddWithValue("@taskname",task.taskname);
             command.Parameters.AddWithValue("@description", task.description);
@@ -41,6 +41,24 @@ namespace mail_back.Repository
             await repository.Add(command);
 
         }
+        public async Task<int> AddTaskWithGetRowId(Models.Task task, string userId)
+        {
+            SQLiteCommand command = new SQLiteCommand($"Insert into {TableName}(userid, taskname, description, starttime, period, apiid, apiparam, laststart) " +
+                $"Values(@userid, @taskname, @description, @starttime, @period, @apiid, @apiparam, @laststart)");
+            command.Parameters.AddWithValue("@userid", Convert.ToInt32(userId));
+            command.Parameters.AddWithValue("@taskname", task.taskname);
+            command.Parameters.AddWithValue("@description", task.description);
+            command.Parameters.AddWithValue("@starttime", task.starttime);
+            command.Parameters.AddWithValue("@period", task.period);
+            command.Parameters.AddWithValue("@apiid", task.apiid);
+            command.Parameters.AddWithValue("@apiparam", task.apiparam);
+            command.Parameters.AddWithValue("@laststart", task.laststart);
+
+           
+            long rowId = await repository.AddWithGetRowId(command);
+            return (int)rowId;
+        }
+
         public async void DeleteTaskById(int id)
         {
             SQLiteCommand command = new SQLiteCommand($"Delete From {TableName} where id = @id");
@@ -52,6 +70,19 @@ namespace mail_back.Repository
             SQLiteCommand command = new SQLiteCommand($"UPDATE {TableName} SET laststart = @last, count = count + 1 where id = @id");
             command.Parameters.AddWithValue("@id", idTask);
             command.Parameters.AddWithValue("@last", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            await repository.Update(command);
+        }
+        public async void UpdateTask(Models.Task task)
+        {
+            SQLiteCommand command = new SQLiteCommand($"UPDATE {TableName} SET taskname = @taskname, description = @description, apiid = @apiid, apiparam = @apiparam, " +
+                $"period = @period where id = @id");
+            command.Parameters.AddWithValue("@taskname", task.taskname);
+            command.Parameters.AddWithValue("@description", task.description);
+            command.Parameters.AddWithValue("@period", task.period);
+            command.Parameters.AddWithValue("@apiid", task.apiid);
+            command.Parameters.AddWithValue("@apiparam", task.apiparam);
+            command.Parameters.AddWithValue("@id", task.id);
+
             await repository.Update(command);
         }
     }

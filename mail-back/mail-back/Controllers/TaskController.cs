@@ -33,6 +33,24 @@ namespace mail_back.Controllers
         }
 
         [HttpGet]
+        [Route("stat")]
+        public IActionResult GetStat() // статистика для админа (имя пользователя, кол-во задач и общее кол-во выполнений)
+        {
+            return Ok(new
+            {
+                stat = from tasks in db.GetTasks()
+                       join users in userdb.GetUsers() on tasks.userid equals users.id
+                       group tasks by users.username into x
+                       select new
+                       {
+                           username = x.Key,
+                           countTasks = x.Count(),
+                           countExecute = x.Sum(x => x.count)
+                       }
+            });
+        }
+
+        [HttpGet]
         [Route("get")]
         public IActionResult GetTasks()
         {
@@ -49,8 +67,25 @@ namespace mail_back.Controllers
             if (task != null)
             {
                 var user = userdb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
-                db.AddTask(task, user.id.ToString());
+                task.id = db.AddTaskWithGetRowId(task, user.id.ToString()).Result;
                 JobScheduler.AddTaskTriggerForJob(task, user);
+                return Ok();
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpPut]
+        [Route("update")]
+        public IActionResult Update([FromBody] Models.Task task)
+        {
+            if (task != null)
+            {
+                var user = userdb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
+                db.UpdateTask(task);
+                JobScheduler.UpdateTaskTrigger(task, user);
                 return Ok();
             }
             else

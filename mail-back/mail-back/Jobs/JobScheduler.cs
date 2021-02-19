@@ -23,7 +23,7 @@ namespace mail_back.Jobs
             QUOTE = 2, //(2 - id forex api в БД)
             FOREX = 3//(3 - id quote api в БД)
         }
-        private static IScheduler scheduler;
+        static IScheduler scheduler;
         public static async void Start(IServiceProvider serviceProvider)
         {
 
@@ -65,7 +65,7 @@ namespace mail_back.Jobs
         public static async void AddTaskTriggerForJob(Models.Task task, User user)
         {
             TriggerBuilder triggerBuilder = TriggerBuilder.Create()
-                        .WithIdentity(DateTime.Now.Ticks.ToString())
+                        .WithIdentity(task.id.ToString())
                         .WithSimpleSchedule(x => x
                         .WithIntervalInMinutes(task.period)
                         .RepeatForever());
@@ -98,7 +98,11 @@ namespace mail_back.Jobs
             trigger.JobDataMap["usermail"] = user.email;
             await scheduler.ScheduleJob(trigger);
         }
-
+        public static async void UpdateTaskTrigger(Models.Task task, User user)
+        {
+            await scheduler.UnscheduleJob(new TriggerKey(task.id.ToString()));
+            AddTaskTriggerForJob(task, user);
+        }
         private static NameValueCollection GetThreadConstraint() // получаем ограничение на кол-во одновременных потоков для задач
         {
             var builder = new ConfigurationBuilder()

@@ -53,10 +53,6 @@ namespace mail_back.Repository
                     return items;
                 }
             }
-            catch(Exception ex)
-            {
-                return new List<T>();
-            }
             finally
             {
                 await db.CloseAsync();
@@ -98,9 +94,21 @@ namespace mail_back.Repository
                 int i = await command.ExecuteNonQueryAsync();
                 await db.CloseAsync();
             }
-            catch (Exception ex)
+            finally
             {
-
+                await db.CloseAsync();
+            }
+        }
+        public async Task<long> AddWithGetRowId(SQLiteCommand command)
+        {
+            try
+            {
+                await db.OpenAsync();
+                command.Connection = db;
+                await command.ExecuteNonQueryAsync();
+                long rowId = db.LastInsertRowId;
+                await db.CloseAsync();
+                return rowId;
             }
             finally
             {
