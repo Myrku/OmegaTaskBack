@@ -33,8 +33,8 @@ namespace mail_back.Jobs
                 var covidApi = scope.ServiceProvider.GetService<ICovid>();
                 var csv = scope.ServiceProvider.GetService<ICSVConvert>();
                 var c = covidApi.GetData(covidparam).Result;
-                //csv.Convert(c, filename);
-                //await mailSender.Send(filename, usermail);
+                csv.Convert(c, filename);
+                await mailSender.Send(filename, usermail);
                 TaskRepository taskRepository = new TaskRepository(GetDBConnString());
                 taskRepository.UpdateLastTime(jobData.GetInt("idtask"));
             }
