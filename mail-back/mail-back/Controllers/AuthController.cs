@@ -22,9 +22,9 @@ namespace mail_back.Controllers
     {
         private IOptions<AuthOptions> authOptions;
         UserRepository db;
-        public AuthController(IOptions<AuthOptions> authoptions, IConfiguration configuration)
+        public AuthController(IOptions<AuthOptions> authOptions, IConfiguration configuration)
         {
-            authOptions = authoptions;
+            this.authOptions = authOptions;
             string connectionString = configuration.GetConnectionString("sqlite");
             db = new UserRepository(connectionString);
         }
@@ -40,16 +40,16 @@ namespace mail_back.Controllers
 
         [HttpPost]
         [Route("sign-in")]
-        public IActionResult Login([FromBody] User user_req)
+        public IActionResult Login([FromBody] User userReq)
         {
-            var user = AuthUser(user_req.username, user_req.password);
+            var user = AuthUser(userReq.Username, userReq.Password);
             if (user != null)
             {
                 var token = GenerateJWTToken(user);
                 return Ok(new
                 {
                     access_token = token,
-                    role = user.idrole
+                    role = user.IdRole
                 });
             }
 
@@ -58,7 +58,7 @@ namespace mail_back.Controllers
 
         private User AuthUser(string username, string password)
         {
-            return db.GetUsers().SingleOrDefault(u => u.username == username && u.password == GetHashPassword(password));
+            return db.GetUsers().SingleOrDefault(u => u.Username == username && u.Password == GetHashPassword(password));
         }
         private string GenerateJWTToken(User user)
         {
@@ -67,8 +67,8 @@ namespace mail_back.Controllers
             var credentails = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new List<Claim>()
             {
-                new Claim(JwtRegisteredClaimNames.UniqueName, user.username),
-                new Claim(JwtRegisteredClaimNames.Sub, user.id.ToString()),
+                new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             };
             var token = new JwtSecurityToken(authParam.Issuer, authParam.Audience, claims,
                 expires: DateTime.Now.AddSeconds(authParam.TokenLifetime), signingCredentials: credentails);

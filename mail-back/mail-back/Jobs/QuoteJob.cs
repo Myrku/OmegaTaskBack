@@ -4,6 +4,7 @@ using mail_back.Mail;
 using mail_back.Repository;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NLog;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ namespace mail_back.Jobs
     public class QuoteJob : IJob
     {
         private readonly IServiceScopeFactory serviceScopeFactory;
+        Logger logger = LogManager.GetCurrentClassLogger();
 
         public QuoteJob(IServiceScopeFactory serviceScopeFactory)
         {
@@ -23,21 +25,28 @@ namespace mail_back.Jobs
         }
         public async Task Execute(IJobExecutionContext context)
         {
-            JobDataMap jobData = context.Trigger.JobDataMap;
-            string filename = jobData.GetInt("idtask").ToString() + ".csv";
-            string usermail = jobData.GetString("usermail");
-            using (var scope = serviceScopeFactory.CreateScope())
+            try
             {
-                var mailSender = scope.ServiceProvider.GetService<IMailSender>();
-                var quoteApi = scope.ServiceProvider.GetService<IQuote>();
-                var csv = scope.ServiceProvider.GetService<ICSVConvert>();
-                var c = quoteApi.GetData().Result;
-                csv.Convert(c, filename);
-                await mailSender.Send(filename, usermail);
+                JobDataMap jobData = context.Trigger.JobDataMap;
+                string fileName = jobData.GetInt("idtask").ToString() + ".csv";
+                string userMail = jobData.GetString("usermail");
+                using (var scope = serviceScopeFactory.CreateScope())
+                {
+                    var mailSender = scope.ServiceProvider.GetService<IMailSender>();
+                    var quoteApi = scope.ServiceProvider.GetService<IQuote>();
+                    var csv = scope.ServiceProvider.GetService<ICSVConvert>();
+                    var c = quoteApi.GetData().Result;
+                    csv.Convert(c, fileName);
+                    await mailSender.Send(fileName, userMail);
 
-                TaskRepository taskRepository = new TaskRepository(GetDBConnString());
-                taskRepository.UpdateLastTime(jobData.GetInt("idtask"));
+                    TaskRepository taskRepository = new TaskRepository(GetDBConnString());
+                    taskRepository.UpdateLastTime(jobData.GetInt("idtask"));
 
+                }
+            }
+            catch(Exception ex)
+            {
+                logger.Error(ex.Message);
             }
         }
         private string GetDBConnString()

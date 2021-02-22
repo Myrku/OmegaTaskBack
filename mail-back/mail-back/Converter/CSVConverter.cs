@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace mail_back.Converter
 {
@@ -19,7 +17,12 @@ namespace mail_back.Converter
                 foreach (var row in items)
                 {
                     var values = properties.Select(p => p.GetValue(row, null));
-                    var line = string.Join(',', values);
+                    List<string> data = new List<string>();
+                    foreach (var value in values)
+                    {
+                        data.Add($"\"{value}\""); // экранирование на случай если в строке будет разделитель
+                    }
+                    var line = string.Join(',', data);
                     file.WriteLine(line);
                 }
             }

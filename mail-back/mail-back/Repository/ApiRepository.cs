@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
 using System.Linq;
 using System.Threading.Tasks;
 using mail_back.Models;
@@ -9,15 +10,19 @@ namespace mail_back.Repository
     public class ApiRepository
     {
         private Repository<Models.Api> repository;
-        const string TableName = "Apis";
+        private const string TableName = "Apis";
         public ApiRepository(string connectionString)
         {
-            repository = new Repository<Models.Api>(connectionString, TableName);
+            repository = new Repository<Models.Api>(connectionString);
         }
 
         public List<Models.Api> GetApis()
         {
-            return repository.Get().Result.ToList();
+            SQLiteCommand command = new SQLiteCommand
+            {
+                CommandText = $"Select Id, ApiName from {TableName}"
+            };
+            return repository.Get(command).Result.ToList();
         }
     }
 }

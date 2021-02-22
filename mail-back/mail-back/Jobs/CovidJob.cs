@@ -10,12 +10,14 @@ using Quartz;
 using Microsoft.Extensions.Configuration;
 using System.IO;
 using mail_back.Repository;
+using NLog;
 
 namespace mail_back.Jobs
 {
     public class CovidJob : IJob
     {
         private readonly IServiceScopeFactory serviceScopeFactory;
+        Logger logger = LogManager.GetCurrentClassLogger();
 
         public CovidJob(IServiceScopeFactory serviceScopeFactory)
         {
@@ -23,20 +25,27 @@ namespace mail_back.Jobs
         }
         public async Task Execute(IJobExecutionContext context)
         {
-            JobDataMap jobData = context.Trigger.JobDataMap;
-            string covidparam = jobData.GetString("param");
-            string filename = jobData.GetInt("idtask").ToString() + ".csv";
-            string usermail = jobData.GetString("usermail");
-            using (var scope = serviceScopeFactory.CreateScope())
+            try
             {
-                var mailSender = scope.ServiceProvider.GetService<IMailSender>();
-                var covidApi = scope.ServiceProvider.GetService<ICovid>();
-                var csv = scope.ServiceProvider.GetService<ICSVConvert>();
-                var c = covidApi.GetData(covidparam).Result;
-                csv.Convert(c, filename);
-                await mailSender.Send(filename, usermail);
-                TaskRepository taskRepository = new TaskRepository(GetDBConnString());
-                taskRepository.UpdateLastTime(jobData.GetInt("idtask"));
+                JobDataMap jobData = context.Trigger.JobDataMap;
+                string covidParam = jobData.GetString("param");
+                string fileName = jobData.GetInt("idtask").ToString() + ".csv";
+                string userMail = jobData.GetString("usermail");
+                using (var scope = serviceScopeFactory.CreateScope())
+                {
+                    var mailSender = scope.ServiceProvider.GetService<IMailSender>();
+                    var covidApi = scope.ServiceProvider.GetService<ICovid>();
+                    var csv = scope.ServiceProvider.GetService<ICSVConvert>();
+                    var c = covidApi.GetData(covidParam).Result;
+                    csv.Convert(c, fileName);
+                    await mailSender.Send(fileName, userMail);
+                    TaskRepository taskRepository = new TaskRepository(GetDBConnString());
+                    taskRepository.UpdateLastTime(jobData.GetInt("idtask"));
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex.Message);
             }
         }
         private string GetDBConnString()

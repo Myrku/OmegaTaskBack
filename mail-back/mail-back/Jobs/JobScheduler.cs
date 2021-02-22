@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration.Json;
 using System.IO;
 using mail_back.Models;
 using System.Collections.Specialized;
+using NLog;
 
 namespace mail_back.Jobs
 {
@@ -24,83 +25,97 @@ namespace mail_back.Jobs
             FOREX = 3//(3 - id quote api в БД)
         }
         static IScheduler scheduler;
+        private static Logger logger = LogManager.GetCurrentClassLogger();
+
         public static async void Start(IServiceProvider serviceProvider)
         {
-
-            StdSchedulerFactory factory = new StdSchedulerFactory(GetThreadConstraint());
-            scheduler = factory.GetScheduler().Result;
-            scheduler.JobFactory = serviceProvider.GetService<JobFactory>();
-            await scheduler.Start();
-
-            IJobDetail covidJob = JobBuilder.Create<CovidJob>()
-                .StoreDurably()
-                .WithIdentity("CovidJob")
-                .Build();
-            await scheduler.AddJob(covidJob, true);
-            IJobDetail forexJob = JobBuilder.Create<ForexJob>()
-                .StoreDurably()
-                .WithIdentity("ForexJob")
-                .Build();
-            await scheduler.AddJob(forexJob, true);
-            IJobDetail quoteJob = JobBuilder.Create<QuoteJob>()
-                .StoreDurably()
-                .WithIdentity("QuoteJob")
-                .Build();
-            await scheduler.AddJob(quoteJob, true);
-
-            var dbConnection = GetDBConnString();
-            TaskRepository taskRepository = new TaskRepository(dbConnection);
-            var tasks = taskRepository.GetTasks();
-            UserRepository userRepository = new UserRepository(dbConnection);
-
-
-            foreach (var task in tasks)
+            try
             {
-                var user = userRepository.GetUserById(task.userid);
-                AddTaskTriggerForJob(task, user);
+
+                StdSchedulerFactory factory = new StdSchedulerFactory(GetThreadConstraint());
+                scheduler = factory.GetScheduler().Result;
+                scheduler.JobFactory = serviceProvider.GetService<JobFactory>();
+                await scheduler.Start();
+
+                IJobDetail covidJob = JobBuilder.Create<CovidJob>()
+                    .StoreDurably()
+                    .WithIdentity("CovidJob")
+                    .Build();
+                await scheduler.AddJob(covidJob, true);
+                IJobDetail forexJob = JobBuilder.Create<ForexJob>()
+                    .StoreDurably()
+                    .WithIdentity("ForexJob")
+                    .Build();
+                await scheduler.AddJob(forexJob, true);
+                IJobDetail quoteJob = JobBuilder.Create<QuoteJob>()
+                    .StoreDurably()
+                    .WithIdentity("QuoteJob")
+                    .Build();
+                await scheduler.AddJob(quoteJob, true);
+
+                var dbConnection = GetDBConnString();
+                TaskRepository taskRepository = new TaskRepository(dbConnection);
+                var tasks = taskRepository.GetTasks();
+                UserRepository userRepository = new UserRepository(dbConnection);
+
+
+                foreach (var task in tasks)
+                {
+                    var user = userRepository.GetUserById(task.UserId);
+                    AddTaskTriggerForJob(task, user);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex.Message);
             }
         }
 
 
         public static async void AddTaskTriggerForJob(Models.Task task, User user)
         {
-            TriggerBuilder triggerBuilder = TriggerBuilder.Create()
-                        .WithIdentity(task.id.ToString())
-                        .WithSimpleSchedule(x => x
-                        .WithIntervalInMinutes(task.period)
-                        .RepeatForever());
-            if (DateTime.Now >= DateTime.Parse(task.starttime))
+            try
             {
-                triggerBuilder.StartNow();
-            }
-            else
-            {
-                triggerBuilder.StartAt(DateTimeOffset.Parse(task.starttime));
-            }
+                TriggerBuilder triggerBuilder = TriggerBuilder.Create()
+                            .WithIdentity(task.Id.ToString())
+                            .WithCronSchedule(task.Period);
+                if (DateTime.Now >= DateTime.Parse(task.StartTime))
+                {
+                    triggerBuilder.StartNow();
+                }
+                else
+                {
+                    triggerBuilder.StartAt(DateTimeOffset.Parse(task.StartTime));
+                }
 
-            ITrigger trigger = null;
-            if (task.apiid == (int)APIID.COVID) // создание триггеров на задачи по получанию данных covid 
-            {
-                trigger = triggerBuilder.ForJob("CovidJob").Build();
+                ITrigger trigger = null;
+                if (task.ApiId == (int)APIID.COVID) // создание триггеров на задачи по получанию данных covid 
+                {
+                    trigger = triggerBuilder.ForJob("CovidJob").Build();
 
-            }
-            else if (task.apiid == (int)APIID.FOREX) // создание триггеров на задачи по получанию данных forex 
-            {
-                trigger = triggerBuilder.ForJob("ForexJob").Build();
+                }
+                else if (task.ApiId == (int)APIID.FOREX) // создание триггеров на задачи по получанию данных forex 
+                {
+                    trigger = triggerBuilder.ForJob("ForexJob").Build();
 
+                }
+                else if (task.ApiId == (int)APIID.QUOTE) // создание триггеров на задачи по получанию данных quote 
+                {
+                    trigger = triggerBuilder.ForJob("QuoteJob").Build();
+                }
+                trigger.JobDataMap["param"] = task.ApiParam;
+                trigger.JobDataMap["idtask"] = task.Id;
+                trigger.JobDataMap["usermail"] = user.Email;
+                await scheduler.ScheduleJob(trigger);
             }
-            else if (task.apiid == (int)APIID.QUOTE) // создание триггеров на задачи по получанию данных quote 
+            catch (Exception ex)
             {
-                trigger = triggerBuilder.ForJob("QuoteJob").Build();
+                logger.Error(ex.Message);
             }
-            trigger.JobDataMap["param"] = task.apiparam;
-            trigger.JobDataMap["idtask"] = task.id;
-            trigger.JobDataMap["usermail"] = user.email;
-            await scheduler.ScheduleJob(trigger);
         }
         public static async void UpdateTaskTrigger(Models.Task task, User user)
         {
-            await scheduler.UnscheduleJob(new TriggerKey(task.id.ToString()));
+            await scheduler.UnscheduleJob(new TriggerKey(task.Id.ToString()));
             AddTaskTriggerForJob(task, user);
         }
         private static NameValueCollection GetThreadConstraint() // получаем ограничение на кол-во одновременных потоков для задач

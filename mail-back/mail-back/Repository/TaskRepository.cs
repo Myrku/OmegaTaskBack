@@ -15,29 +15,37 @@ namespace mail_back.Repository
         const string TableName = "Tasks";
         public TaskRepository(string connectionString)
         {
-            repository = new Repository<Models.Task>(connectionString, TableName);
+            repository = new Repository<Models.Task>(connectionString);
         }
 
         public List<Models.Task> GetTasks()
         {
-            return repository.Get().Result.ToList();
+            SQLiteCommand command = new SQLiteCommand
+            {
+                CommandText = $"Select Id, UserId, TaskName, Description, StartTime, Period, ApiId, ApiParam, LastStart, Count from {TableName}"
+            };
+            return repository.Get(command).Result.ToList();
         }
         public List<Models.Task> GetTasksByUserId(string userId)
         {
-            return repository.Get().Result.Where(x => x.userid == Convert.ToInt32(userId)).ToList();
+            SQLiteCommand command = new SQLiteCommand
+            {
+                CommandText = $"Select Id, UserId, TaskName, Description, StartTime, Period, ApiId, ApiParam, LastStart, Count from {TableName}"
+            };
+            return repository.Get(command).Result.Where(x => x.UserId == Convert.ToInt32(userId)).ToList();
         }
         public async void AddTask(Models.Task task, string userId)
         {
             SQLiteCommand command = new SQLiteCommand($"Insert into {TableName}(userid, taskname, description, starttime, period, apiid, apiparam, laststart) " +
                 $"Values(@userid, @taskname, @description, @starttime, @period, @apiid, @apiparam, @laststart);");
             command.Parameters.AddWithValue("@userid", Convert.ToInt32(userId));
-            command.Parameters.AddWithValue("@taskname",task.taskname);
-            command.Parameters.AddWithValue("@description", task.description);
-            command.Parameters.AddWithValue("@starttime", task.starttime);
-            command.Parameters.AddWithValue("@period", task.period);
-            command.Parameters.AddWithValue("@apiid", task.apiid);
-            command.Parameters.AddWithValue("@apiparam", task.apiparam);
-            command.Parameters.AddWithValue("@laststart", task.laststart);
+            command.Parameters.AddWithValue("@taskname",task.TaskName);
+            command.Parameters.AddWithValue("@description", task.Description);
+            command.Parameters.AddWithValue("@starttime", task.StartTime);
+            command.Parameters.AddWithValue("@period", task.Period);
+            command.Parameters.AddWithValue("@apiid", task.ApiId);
+            command.Parameters.AddWithValue("@apiparam", task.ApiParam);
+            command.Parameters.AddWithValue("@laststart", task.LastStart);
             await repository.Add(command);
 
         }
@@ -46,16 +54,16 @@ namespace mail_back.Repository
             SQLiteCommand command = new SQLiteCommand($"Insert into {TableName}(userid, taskname, description, starttime, period, apiid, apiparam, laststart) " +
                 $"Values(@userid, @taskname, @description, @starttime, @period, @apiid, @apiparam, @laststart)");
             command.Parameters.AddWithValue("@userid", Convert.ToInt32(userId));
-            command.Parameters.AddWithValue("@taskname", task.taskname);
-            command.Parameters.AddWithValue("@description", task.description);
-            command.Parameters.AddWithValue("@starttime", task.starttime);
-            command.Parameters.AddWithValue("@period", task.period);
-            command.Parameters.AddWithValue("@apiid", task.apiid);
-            command.Parameters.AddWithValue("@apiparam", task.apiparam);
-            command.Parameters.AddWithValue("@laststart", task.laststart);
+            command.Parameters.AddWithValue("@taskname", task.TaskName);
+            command.Parameters.AddWithValue("@description", task.Description);
+            command.Parameters.AddWithValue("@starttime", task.StartTime);
+            command.Parameters.AddWithValue("@period", task.Period);
+            command.Parameters.AddWithValue("@apiid", task.ApiId);
+            command.Parameters.AddWithValue("@apiparam", task.ApiParam);
+            command.Parameters.AddWithValue("@laststart", task.LastStart);
 
            
-            long rowId = await repository.AddWithGetRowId(command);
+            long? rowId = await repository.AddWithGetRowId(command);
             return (int)rowId;
         }
 
@@ -76,12 +84,12 @@ namespace mail_back.Repository
         {
             SQLiteCommand command = new SQLiteCommand($"UPDATE {TableName} SET taskname = @taskname, description = @description, apiid = @apiid, apiparam = @apiparam, " +
                 $"period = @period where id = @id");
-            command.Parameters.AddWithValue("@taskname", task.taskname);
-            command.Parameters.AddWithValue("@description", task.description);
-            command.Parameters.AddWithValue("@period", task.period);
-            command.Parameters.AddWithValue("@apiid", task.apiid);
-            command.Parameters.AddWithValue("@apiparam", task.apiparam);
-            command.Parameters.AddWithValue("@id", task.id);
+            command.Parameters.AddWithValue("@taskname", task.TaskName);
+            command.Parameters.AddWithValue("@description", task.Description);
+            command.Parameters.AddWithValue("@period", task.Period);
+            command.Parameters.AddWithValue("@apiid", task.ApiId);
+            command.Parameters.AddWithValue("@apiparam", task.ApiParam);
+            command.Parameters.AddWithValue("@id", task.Id);
 
             await repository.Update(command);
         }

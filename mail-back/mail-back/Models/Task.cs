@@ -7,15 +7,15 @@ namespace mail_back.Models
 {
     public class Task
     {
-        public int id { get; set; }
-        public int userid { get; set; }
-        public string taskname { get; set; }
-        public string description { get; set; }
-        public string starttime { get; set; }
-        public int period { get; set; }
-        public int apiid { get; set; }
-        public string apiparam { get; set; }
-        public string laststart { get; set; }
-        public int count { get; set; }
+        public int Id { get; set; }
+        public int UserId { get; set; }
+        public string TaskName { get; set; }
+        public string Description { get; set; }
+        public string StartTime { get; set; }
+        public string Period { get; set; }
+        public int ApiId { get; set; }
+        public string ApiParam { get; set; }
+        public string LastStart { get; set; }
+        public int Count { get; set; }
     }
 }

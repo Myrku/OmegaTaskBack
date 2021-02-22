@@ -22,14 +22,14 @@ namespace mail_back.Controllers
     public class TaskController : ControllerBase
     {
         TaskRepository db;
-        ApiRepository apidb;
-        UserRepository userdb;
-        public TaskController(IConfiguration configuration, IServiceProvider service)
+        ApiRepository apiDb;
+        UserRepository userDb;
+        public TaskController(IConfiguration configuration)
         {
             string connectionString = configuration.GetConnectionString("sqlite");
             db = new TaskRepository(connectionString);
-            apidb = new ApiRepository(connectionString);
-            userdb = new UserRepository(connectionString);
+            apiDb = new ApiRepository(connectionString);
+            userDb = new UserRepository(connectionString);
         }
 
         [HttpGet]
@@ -39,13 +39,13 @@ namespace mail_back.Controllers
             return Ok(new
             {
                 stat = from tasks in db.GetTasks()
-                       join users in userdb.GetUsers() on tasks.userid equals users.id
-                       group tasks by users.username into x
+                       join users in userDb.GetUsers() on tasks.UserId equals users.Id
+                       group tasks by users.Username into x
                        select new
                        {
                            username = x.Key,
                            countTasks = x.Count(),
-                           countExecute = x.Sum(x => x.count)
+                           countExecute = x.Sum(x => x.Count)
                        }
             });
         }
@@ -66,8 +66,8 @@ namespace mail_back.Controllers
         {
             if (task != null)
             {
-                var user = userdb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
-                task.id = db.AddTaskWithGetRowId(task, user.id.ToString()).Result;
+                var user = userDb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
+                task.Id = db.AddTaskWithGetRowId(task, user.Id.ToString()).Result;
                 JobScheduler.AddTaskTriggerForJob(task, user);
                 return Ok();
             }
@@ -83,7 +83,7 @@ namespace mail_back.Controllers
         {
             if (task != null)
             {
-                var user = userdb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
+                var user = userDb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
                 db.UpdateTask(task);
                 JobScheduler.UpdateTaskTrigger(task, user);
                 return Ok();
@@ -108,7 +108,7 @@ namespace mail_back.Controllers
         {
             return Ok(new
             {
-                apis = apidb.GetApis()
+                apis = apiDb.GetApis()
             });
         }
     }

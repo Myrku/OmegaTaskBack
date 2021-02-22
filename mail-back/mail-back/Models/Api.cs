@@ -7,7 +7,7 @@ namespace mail_back.Models
 {
     public class Api
     {
-        public int id { get; set; }
-        public string apiname { get; set; }
+        public int Id { get; set; }
+        public string ApiName { get; set; }
     }
 }

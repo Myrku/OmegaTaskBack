@@ -6,17 +6,18 @@ using System.Data.SQLite;
 using System.Data;
 using System.Security.Cryptography;
 using System.Text;
+using NLog;
 
 namespace mail_back.Repository
 {
     public class Repository<T> : IRepository<T> where T : class, new()
     {
         private SQLiteConnection db;
-        readonly private string TableName;
-        public Repository(string connectionString, string tableName)
+        Logger logger = LogManager.GetCurrentClassLogger();
+
+        public Repository(string connectionString)
         {
             this.db = new SQLiteConnection(connectionString);
-            TableName = tableName;
         }
         public async Task Delete(SQLiteCommand command)
         {
@@ -27,21 +28,26 @@ namespace mail_back.Repository
                 int i = await command.ExecuteNonQueryAsync();
                 await db.CloseAsync();
             }
+            catch (Exception ex)
+            {
+                logger.Error(ex.Message);
+                await db.CloseAsync();
+            }
             finally
             {
                 await db.CloseAsync();
             }
         }
 
-        public async Task<IEnumerable<T>> Get()
+        public async Task<IEnumerable<T>> Get(SQLiteCommand command)
         {
+            List<T> items = new List<T>();
             try
             {
                 await db.OpenAsync();
-                SQLiteCommand command = new SQLiteCommand($"Select * From {TableName}", db);
-                using(var reader = command.ExecuteReaderAsync())
+                command.Connection = db;
+                using (var reader = command.ExecuteReaderAsync())
                 {
-                    List<T> items = new List<T>();
                     if(reader.Result.HasRows)
                     {
                         while (reader.Result.Read())
@@ -53,31 +59,10 @@ namespace mail_back.Repository
                     return items;
                 }
             }
-            finally
+            catch(Exception ex)
             {
-                await db.CloseAsync();
-            }
-        }
-
-        public async Task<T> Get(int id)
-        {
-            try
-            {
-                await db.OpenAsync();
-                SQLiteCommand command = new SQLiteCommand($"Select * From {TableName} where id = {id}", db);
-                using (var reader = command.ExecuteReaderAsync())
-                {
-                    T item = new T();
-                    if (reader.Result.HasRows)
-                    {
-                        while (reader.Result.Read())
-                        {
-                            item = Map<T>(reader.Result);
-                        }
-                    }
-                    await db.CloseAsync();
-                    return item;
-                }
+                logger.Error(ex.Message);
+                return items;
             }
             finally
             {
@@ -94,12 +79,17 @@ namespace mail_back.Repository
                 int i = await command.ExecuteNonQueryAsync();
                 await db.CloseAsync();
             }
+            catch(Exception ex)
+            {
+                logger.Error(ex.Message);
+                await db.CloseAsync();
+            }
             finally
             {
                 await db.CloseAsync();
             }
         }
-        public async Task<long> AddWithGetRowId(SQLiteCommand command)
+        public async Task<long?> AddWithGetRowId(SQLiteCommand command)
         {
             try
             {
@@ -109,6 +99,11 @@ namespace mail_back.Repository
                 long rowId = db.LastInsertRowId;
                 await db.CloseAsync();
                 return rowId;
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex.Message);
+                return null;
             }
             finally
             {
@@ -124,6 +119,11 @@ namespace mail_back.Repository
                 int i = await command.ExecuteNonQueryAsync();
                 await db.CloseAsync();
             }
+            catch (Exception ex)
+            {
+                logger.Error(ex.Message);
+                await db.CloseAsync();
+            }
             finally
             {
                 await db.CloseAsync();
@@ -133,19 +133,26 @@ namespace mail_back.Repository
         protected T Map<entity>(IDataRecord record)
         {
             var objT = Activator.CreateInstance<T>();
-            foreach (var property in typeof(entity).GetProperties())
+            try
             {
-                if (!record.IsDBNull(record.GetOrdinal(property.Name)) && property.PropertyType != typeof(int))
+                foreach (var property in typeof(entity).GetProperties())
                 {
-                    property.SetValue(objT, record[property.Name]);
+                    if (!record.IsDBNull(record.GetOrdinal(property.Name)) && property.PropertyType != typeof(int))
+                    {
+                        property.SetValue(objT, record[property.Name]);
+                    }
+                    else
+                    {
+                        property.SetValue(objT, Convert.ToInt32(record[property.Name]));
+                    }
                 }
-                else
-                {
-                    property.SetValue(objT, Convert.ToInt32(record[property.Name]));
-                }
+                return objT;
             }
-
-            return objT;
+            catch (Exception ex)
+            {
+                logger.Error(ex.Message);
+                return objT;
+            }
 
         }
 
