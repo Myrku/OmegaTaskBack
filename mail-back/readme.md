@@ -3,12 +3,21 @@
 ### Backend: https://github.com/Myrku/OmegaTaskBack
 ### Frontend: https://github.com/Myrku/OmegaTaskFront
 
+Данные пользователя с ролью admin:
+- Логин: test33
+- Пароль: qwerty1234
+
+Данные обычного польователя:
+- Логин: test22
+- Пароль: qwerty1234
+
 ## Backend
 Backend представлен webapi, написанным на asp .net core 3.1.
 
 - Для аутентификации использованы JWT-токены
 - В качестве базы данных используется sqlite
 - Для создания расписания использовался Quartz .net
+- Пароли для большей безопасности хранятся в хэшированном формате
 
 В качестве 3х API были выбраны:
 - [Covid-19 API](https://covid19-api.org/)
