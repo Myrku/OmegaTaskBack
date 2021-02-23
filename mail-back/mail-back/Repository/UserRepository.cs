@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Data.SQLite;
+using Microsoft.Extensions.Options;
 
 namespace mail_back.Repository
 {
@@ -20,7 +21,7 @@ namespace mail_back.Repository
         {
             SQLiteCommand command = new SQLiteCommand
             {
-                CommandText = $"Select Id, UserName, Email, Password, IdRole from {TableName}"
+                CommandText = $"Select [Id], [UserName], [Email], [Password], [IdRole] from {TableName}"
             };
             return repository.Get(command).Result.ToList();
         }
@@ -29,7 +30,7 @@ namespace mail_back.Repository
         {
             SQLiteCommand command = new SQLiteCommand
             {
-                CommandText = $"Select Id, UserName, Email, Password, IdRole from {TableName} where id = @id"
+                CommandText = $"Select [Id], [UserName], [Email], [Password], [IdRole] from {TableName} where id = @id"
             };
             command.Parameters.AddWithValue("@id", id);
             return repository.Get(command).Result.FirstOrDefault();

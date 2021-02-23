@@ -1,9 +1,11 @@
 ﻿using mail_back.Api;
 using mail_back.Converter;
 using mail_back.Mail;
+using mail_back.Models;
 using mail_back.Repository;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using NLog;
 using Quartz;
 using System;
@@ -18,18 +20,21 @@ namespace mail_back.Jobs
     {
         private readonly IServiceScopeFactory serviceScopeFactory;
         Logger logger = LogManager.GetCurrentClassLogger();
+        private readonly string conStr;
 
-        public QuoteJob(IServiceScopeFactory serviceScopeFactory)
+
+        public QuoteJob(IServiceScopeFactory serviceScopeFactory, IOptionsSnapshot<DBConfig> dbConfig)
         {
             this.serviceScopeFactory = serviceScopeFactory;
+            conStr = dbConfig.Value.SqliteConnection;
         }
-        public async Task Execute(IJobExecutionContext context)
+        public async System.Threading.Tasks.Task Execute(IJobExecutionContext context)
         {
             try
             {
                 JobDataMap jobData = context.Trigger.JobDataMap;
-                string fileName = jobData.GetInt("idtask").ToString() + ".csv";
-                string userMail = jobData.GetString("usermail");
+                string fileName = jobData.GetInt("idTask").ToString() + ".csv";
+                string userMail = jobData.GetString("userMail");
                 using (var scope = serviceScopeFactory.CreateScope())
                 {
                     var mailSender = scope.ServiceProvider.GetService<IMailSender>();
@@ -39,8 +44,8 @@ namespace mail_back.Jobs
                     csv.Convert(c, fileName);
                     await mailSender.Send(fileName, userMail);
 
-                    TaskRepository taskRepository = new TaskRepository(GetDBConnString());
-                    taskRepository.UpdateLastTime(jobData.GetInt("idtask"));
+                    TaskRepository taskRepository = new TaskRepository(conStr);
+                    taskRepository.UpdateLastTime(jobData.GetInt("idTask"));
 
                 }
             }
@@ -48,20 +53,6 @@ namespace mail_back.Jobs
             {
                 logger.Error(ex.Message);
             }
-        }
-        private string GetDBConnString()
-        {
-            var builder = new ConfigurationBuilder()
-            .SetBasePath(ApplicationExeDirectory())
-            .AddJsonFile("appsettings.json").Build();
-            return builder["ConnectionStrings:sqlite"];
-        }
-        private static string ApplicationExeDirectory()
-        {
-            var location = System.Reflection.Assembly.GetExecutingAssembly().Location;
-            var appRoot = Path.GetDirectoryName(location);
-
-            return appRoot;
         }
     }
 }

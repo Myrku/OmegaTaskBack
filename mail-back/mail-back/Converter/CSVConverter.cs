@@ -20,7 +20,7 @@ namespace mail_back.Converter
                     List<string> data = new List<string>();
                     foreach (var value in values)
                     {
-                        data.Add($"\"{value}\""); // экранирование на случай если в строке будет разделитель
+                        data.Add(value.ToString().Contains(',') ? $"\"{value}\"" : value.ToString()); // экранирование на если в строке будет разделитель
                     }
                     var line = string.Join(',', data);
                     file.WriteLine(line);

@@ -31,7 +31,6 @@ namespace mail_back.Repository
             catch (Exception ex)
             {
                 logger.Error(ex.Message);
-                await db.CloseAsync();
             }
             finally
             {
@@ -62,7 +61,7 @@ namespace mail_back.Repository
             catch(Exception ex)
             {
                 logger.Error(ex.Message);
-                return items;
+                throw;
             }
             finally
             {
@@ -82,14 +81,13 @@ namespace mail_back.Repository
             catch(Exception ex)
             {
                 logger.Error(ex.Message);
-                await db.CloseAsync();
             }
             finally
             {
                 await db.CloseAsync();
             }
         }
-        public async Task<long?> AddWithGetRowId(SQLiteCommand command)
+        public async Task<long> AddWithGetRowId(SQLiteCommand command)
         {
             try
             {
@@ -103,7 +101,7 @@ namespace mail_back.Repository
             catch (Exception ex)
             {
                 logger.Error(ex.Message);
-                return null;
+                throw;
             }
             finally
             {
@@ -122,7 +120,6 @@ namespace mail_back.Repository
             catch (Exception ex)
             {
                 logger.Error(ex.Message);
-                await db.CloseAsync();
             }
             finally
             {
@@ -132,9 +129,9 @@ namespace mail_back.Repository
 
         protected T Map<entity>(IDataRecord record)
         {
-            var objT = Activator.CreateInstance<T>();
             try
             {
+                var objT = Activator.CreateInstance<T>();
                 foreach (var property in typeof(entity).GetProperties())
                 {
                     if (!record.IsDBNull(record.GetOrdinal(property.Name)) && property.PropertyType != typeof(int))
@@ -151,7 +148,7 @@ namespace mail_back.Repository
             catch (Exception ex)
             {
                 logger.Error(ex.Message);
-                return objT;
+                throw;
             }
 
         }

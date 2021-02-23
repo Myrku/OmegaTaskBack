@@ -13,6 +13,7 @@ using System.IO;
 using mail_back.Models;
 using System.Collections.Specialized;
 using NLog;
+using Microsoft.Extensions.Options;
 
 namespace mail_back.Jobs
 {
@@ -26,12 +27,18 @@ namespace mail_back.Jobs
         }
         static IScheduler scheduler;
         private static Logger logger = LogManager.GetCurrentClassLogger();
+        private const string configFileName = "appsettings.json";
+        private const string covidJobName = "covidJob";
+        private const string forexJobName = "forexJob";
+        private const string quoteJobName = "qouteJob";
+        private const string threadConfigName = "ThreadConstraint:Param";
+        private const string threadConfigCount = "ThreadConstraint:CountThreads";
+        private const string conStrConfig = "ConnectionStrings:SqliteConnection";
 
         public static async void Start(IServiceProvider serviceProvider)
         {
             try
             {
-
                 StdSchedulerFactory factory = new StdSchedulerFactory(GetThreadConstraint());
                 scheduler = factory.GetScheduler().Result;
                 scheduler.JobFactory = serviceProvider.GetService<JobFactory>();
@@ -39,17 +46,17 @@ namespace mail_back.Jobs
 
                 IJobDetail covidJob = JobBuilder.Create<CovidJob>()
                     .StoreDurably()
-                    .WithIdentity("CovidJob")
+                    .WithIdentity(covidJobName)
                     .Build();
                 await scheduler.AddJob(covidJob, true);
                 IJobDetail forexJob = JobBuilder.Create<ForexJob>()
                     .StoreDurably()
-                    .WithIdentity("ForexJob")
+                    .WithIdentity(forexJobName)
                     .Build();
                 await scheduler.AddJob(forexJob, true);
                 IJobDetail quoteJob = JobBuilder.Create<QuoteJob>()
                     .StoreDurably()
-                    .WithIdentity("QuoteJob")
+                    .WithIdentity(quoteJobName)
                     .Build();
                 await scheduler.AddJob(quoteJob, true);
 
@@ -91,21 +98,21 @@ namespace mail_back.Jobs
                 ITrigger trigger = null;
                 if (task.ApiId == (int)APIID.COVID) // создание триггеров на задачи по получанию данных covid 
                 {
-                    trigger = triggerBuilder.ForJob("CovidJob").Build();
+                    trigger = triggerBuilder.ForJob(covidJobName).Build();
 
                 }
                 else if (task.ApiId == (int)APIID.FOREX) // создание триггеров на задачи по получанию данных forex 
                 {
-                    trigger = triggerBuilder.ForJob("ForexJob").Build();
+                    trigger = triggerBuilder.ForJob(forexJobName).Build();
 
                 }
                 else if (task.ApiId == (int)APIID.QUOTE) // создание триггеров на задачи по получанию данных quote 
                 {
-                    trigger = triggerBuilder.ForJob("QuoteJob").Build();
+                    trigger = triggerBuilder.ForJob(quoteJobName).Build();
                 }
-                trigger.JobDataMap["param"] = task.ApiParam;
-                trigger.JobDataMap["idtask"] = task.Id;
-                trigger.JobDataMap["usermail"] = user.Email;
+                trigger.JobDataMap["apiParam"] = task.ApiParam;
+                trigger.JobDataMap["idTask"] = task.Id;
+                trigger.JobDataMap["userMail"] = user.Email;
                 await scheduler.ScheduleJob(trigger);
             }
             catch (Exception ex)
@@ -122,15 +129,15 @@ namespace mail_back.Jobs
         {
             var builder = new ConfigurationBuilder()
             .SetBasePath(ApplicationExeDirectory())
-            .AddJsonFile("appsettings.json").Build();
-            return new NameValueCollection { { builder["ThreadConstraint:param"], builder["ThreadConstraint:countThreads"] } };
+            .AddJsonFile(configFileName).Build();
+            return new NameValueCollection { { builder[threadConfigName], builder[threadConfigCount] } };
         }
         private static string GetDBConnString()
         {
             var builder = new ConfigurationBuilder()
             .SetBasePath(ApplicationExeDirectory())
-            .AddJsonFile("appsettings.json").Build();
-            return builder["ConnectionStrings:sqlite"];
+            .AddJsonFile(configFileName).Build();
+            return builder[conStrConfig];
         }
 
         private static string ApplicationExeDirectory()

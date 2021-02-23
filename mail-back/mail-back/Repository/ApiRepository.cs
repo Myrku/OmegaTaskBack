@@ -20,7 +20,7 @@ namespace mail_back.Repository
         {
             SQLiteCommand command = new SQLiteCommand
             {
-                CommandText = $"Select Id, ApiName from {TableName}"
+                CommandText = $"Select [Id], [ApiName] from {TableName}"
             };
             return repository.Get(command).Result.ToList();
         }

@@ -13,6 +13,9 @@ using mail_back.Mail;
 using mail_back.Converter;
 using mail_back.Models;
 using mail_back.Jobs;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
+using NLog;
 
 namespace mail_back.Controllers
 {
@@ -24,9 +27,11 @@ namespace mail_back.Controllers
         TaskRepository db;
         ApiRepository apiDb;
         UserRepository userDb;
-        public TaskController(IConfiguration configuration)
+        Logger logger = LogManager.GetCurrentClassLogger();
+
+        public TaskController(IOptionsSnapshot<DBConfig> dbConfig)
         {
-            string connectionString = configuration.GetConnectionString("sqlite");
+            string connectionString = dbConfig.Value.SqliteConnection;
             db = new TaskRepository(connectionString);
             apiDb = new ApiRepository(connectionString);
             userDb = new UserRepository(connectionString);
@@ -34,46 +39,71 @@ namespace mail_back.Controllers
 
         [HttpGet]
         [Route("stat")]
+        [Authorize(Roles = "1")]
         public IActionResult GetStat() // статистика для админа (имя пользователя, кол-во задач и общее кол-во выполнений)
         {
-            return Ok(new
+            try
             {
-                stat = from tasks in db.GetTasks()
-                       join users in userDb.GetUsers() on tasks.UserId equals users.Id
-                       group tasks by users.Username into x
-                       select new
-                       {
-                           username = x.Key,
-                           countTasks = x.Count(),
-                           countExecute = x.Sum(x => x.Count)
-                       }
-            });
+                return Ok(new
+                {
+                    stat = from tasks in db.GetTasks()
+                           join users in userDb.GetUsers() on tasks.UserId equals users.Id
+                           group tasks by users.Username into x
+                           select new
+                           {
+                               username = x.Key,
+                               countTasks = x.Count(),
+                               countExecute = x.Sum(x => x.Count)
+                           }
+                });
+            }
+            catch(Exception ex)
+            {
+                logger.Error(ex.Message);
+                throw;
+            }
         }
 
         [HttpGet]
         [Route("get")]
         public IActionResult GetTasks()
         {
-            return Ok(new
+            try
             {
-                tasks = db.GetTasksByUserId(User.FindFirst(ClaimTypes.NameIdentifier)?.Value)
-            });
+                return Ok(new
+                {
+                    tasks = db.GetTasksByUserId(User.FindFirst(ClaimTypes.NameIdentifier)?.Value)
+                });
+            }
+            catch(Exception ex)
+            {
+                logger.Error(ex.Message);
+                throw;
+            }
         }
 
         [HttpPost]
         [Route("add")]
-        public IActionResult AddTast([FromBody] Models.Task task)
+        public IActionResult AddTask([FromBody] Models.Task task)
         {
-            if (task != null)
+            try
             {
-                var user = userDb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
-                task.Id = db.AddTaskWithGetRowId(task, user.Id.ToString()).Result;
-                JobScheduler.AddTaskTriggerForJob(task, user);
-                return Ok();
+                if (task != null)
+                {
+                    var user = userDb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
+                    task.Id = db.AddTaskWithGetRowId(task, user.Id.ToString()).Result;
+                    JobScheduler.AddTaskTriggerForJob(task, user);
+                    return Ok();
+                }
+                else
+                {
+                    return BadRequest();
+                }
             }
-            else
+            catch(Exception ex)
             {
-                return BadRequest();
+                logger.Error(ex.Message);
+                throw;
             }
         }
 
@@ -81,16 +111,24 @@ namespace mail_back.Controllers
         [Route("update")]
         public IActionResult Update([FromBody] Models.Task task)
         {
-            if (task != null)
+            try
             {
-                var user = userDb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
-                db.UpdateTask(task);
-                JobScheduler.UpdateTaskTrigger(task, user);
-                return Ok();
+                if (task != null)
+                {
+                    var user = userDb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
+                    db.UpdateTask(task);
+                    JobScheduler.UpdateTaskTrigger(task, user);
+                    return Ok();
+                }
+                else
+                {
+                    return BadRequest();
+                }
             }
-            else
+            catch(Exception ex)
             {
-                return BadRequest();
+                logger.Error(ex.Message);
+                return Ok("Error update task");
             }
         }
 
@@ -98,18 +136,34 @@ namespace mail_back.Controllers
         [Route("delete/{id}")]
         public IActionResult DeleteTask(int id)
         {
-            db.DeleteTaskById(id);
-            return Ok();
+            try
+            {
+                db.DeleteTaskById(id);
+                return Ok();
+            }
+            catch(Exception ex)
+            {
+                logger.Error(ex.Message);
+                throw;
+            }
         }
 
         [HttpGet]
         [Route("getapis")]
         public IActionResult GetApis()
         {
-            return Ok(new
+            try
             {
-                apis = apiDb.GetApis()
-            });
+                return Ok(new
+                {
+                    apis = apiDb.GetApis()
+                });
+            }
+            catch(Exception ex)
+            {
+                logger.Error(ex.Message);
+                throw;
+            }
         }
     }
 }

@@ -44,6 +44,8 @@ namespace mail_back
             services.AddScoped<IForex, ForexPairApi>();
             services.AddScoped<IQuote, QuoteApi>();
 
+            services.Configure<MailSenderConfig>(Configuration.GetSection("MailSender"));
+            services.Configure<DBConfig>(Configuration.GetSection("ConnectionStrings"));
             var authoptions = Configuration.GetSection("Auth").Get<AuthOptions>();
             services.Configure<AuthOptions>(Configuration.GetSection("Auth"));
 

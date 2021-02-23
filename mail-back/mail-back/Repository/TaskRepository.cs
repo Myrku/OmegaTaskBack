@@ -22,7 +22,7 @@ namespace mail_back.Repository
         {
             SQLiteCommand command = new SQLiteCommand
             {
-                CommandText = $"Select Id, UserId, TaskName, Description, StartTime, Period, ApiId, ApiParam, LastStart, Count from {TableName}"
+                CommandText = $"Select [Id], [UserId], [TaskName], [Description], [StartTime], [Period], [ApiId], [ApiParam], [LastStart], [Count] from {TableName}"
             };
             return repository.Get(command).Result.ToList();
         }
@@ -30,7 +30,7 @@ namespace mail_back.Repository
         {
             SQLiteCommand command = new SQLiteCommand
             {
-                CommandText = $"Select Id, UserId, TaskName, Description, StartTime, Period, ApiId, ApiParam, LastStart, Count from {TableName}"
+                CommandText = $"Select [Id], [UserId], [TaskName], [Description], [StartTime], [Period], [ApiId], [ApiParam], [LastStart], [Count] from {TableName}"
             };
             return repository.Get(command).Result.Where(x => x.UserId == Convert.ToInt32(userId)).ToList();
         }
