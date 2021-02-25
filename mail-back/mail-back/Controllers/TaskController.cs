@@ -28,6 +28,8 @@ namespace mail_back.Controllers
         ApiRepository apiDb;
         UserRepository userDb;
         Logger logger = LogManager.GetCurrentClassLogger();
+        private const string claimIdType = "Id";
+
 
         public TaskController(IOptionsSnapshot<DBConfig> dbConfig)
         {
@@ -36,6 +38,7 @@ namespace mail_back.Controllers
             apiDb = new ApiRepository(connectionString);
             userDb = new UserRepository(connectionString);
         }
+
 
         [HttpGet]
         [Route("stat")]
@@ -72,7 +75,7 @@ namespace mail_back.Controllers
             {
                 return Ok(new
                 {
-                    tasks = db.GetTasksByUserId(User.FindFirst(ClaimTypes.NameIdentifier)?.Value)
+                    tasks = db.GetTasksByUserId(User.FindFirst(claimIdType)?.Value)
                 });
             }
             catch(Exception ex)
@@ -90,7 +93,7 @@ namespace mail_back.Controllers
             {
                 if (task != null)
                 {
-                    var user = userDb.GetUserById(Convert.ToInt32(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
+                    var user = userDb.GetUserById(Convert.ToInt32(User.FindFirst(claimIdType)?.Value));
                     task.Id = db.AddTaskWithGetRowId(task, user.Id.ToString()).Result;
                     JobScheduler.AddTaskTriggerForJob(task, user);
                     return Ok();

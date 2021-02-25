@@ -25,6 +25,7 @@ namespace mail_back.Controllers
         private IOptions<AuthOptions> authOptions;
         UserRepository db;
         Logger logger = LogManager.GetCurrentClassLogger();
+        private const string claimIdType = "Id";
 
         public AuthController(IOptions<AuthOptions> authOptions, IOptionsSnapshot<DBConfig> dbConfig)
         {
@@ -97,7 +98,7 @@ namespace mail_back.Controllers
                 var claims = new List<Claim>()
                 {
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim("Id", user.Id.ToString()),
+                new Claim(claimIdType, user.Id.ToString()),
                 new Claim(ClaimTypes.Role, user.IdRole.ToString())
                 };
                 var token = new JwtSecurityToken(authParam.Issuer, authParam.Audience, claims,
